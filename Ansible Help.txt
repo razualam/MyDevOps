@@ -1,0 +1,92 @@
+####### Ansible Help #######
+* hands-on training platform: ubunto 20.04
+Ansible is an open source IT automation engine that automates provisioning, configuration management, application deployment, orchestration, and many other IT processes (implementing Infrastructure as a Code methodology).
+
+Ansible uses simple, human-readable scripts called playbooks to automate your tasks across the hosts (multiple hosts from the master host).
+
+* hosts must have python (latest) installed, generally python would be installed with the OS by default
+- we need to check python is installed or not
+python -V OR python3 -V OR other method
+- if not installed then we need to install python packages
+
+* we need a master node and two managed node for practice
+- create a base VM (fresh OS) and then create 3 VM by cloning the base VM
+- lets  
+master node is 192.168.10.182 
+managed nodes are 192.168.10.164 and 192.168.10.180
+and user is nns
+
+# we need to enable our managed nodes to login without password
+- we need to generate key in our master node and copy to the managed nodes
+ssh-keygen [no password used for any step]
+ssh-copy-id nns@192.168.10.164
+ssh-copy-id nns@192.168.10.180
+
+- check that we can login managed nodes without using the password
+ssh 192.168.10.164
+ssh 192.168.10.180
+
+- also we need to config sudoers to allowing the ansible to execute any command in the managed hosts
+vim /etc/sudoers
+
+- add below lines in the sudoers
+nns     ALL=(ALL:ALL) ALL -> under the line # User privilege specification (optional)
+nns     ALL=(ALL)       NOPASSWD: ALL
+
+# install ansible
+- go to root
+sudo -s
+apt update
+apt install ansible
+
+# organize our host list under a group
+- go to root
+sudo -s
+vim /etc/ansible/hosts
+
+- edit hosts file
+[muself]
+192.168.10.182
+
+[webservers]
+192.168.10.164
+192.168.10.180
+
+- Host Checking with ansible command: 
+ansible myself --list-hosts 
+ansible webservers --list-hosts
+
+# check ansible can communicate with managed hosts
+- using Ping validation
+ansible webservers -m ping
+
+- using ad hoc commands
+ansible webservers -m command -a "cat /etc/hosts"
+ansible webservers -m command -a "df -HT"
+ansible webservers -m command -a "free -mh"
+ansible webservers -m command -a "getenforce"
+ansible webservers -m command -a "ifconfig"
+
+- Directory Create
+ansible webservers -m file -a "dest=/opt/devops/ state=directory"
+
+- File Copy
+ansible webservers -m ansible.builtin.copy -a "src=/etc/hosts dest=/tmp/hosts"
+
+- Delete the file
+ansible webservers -m ansible.builtin.file -a "dest=/tmp/hosts state=absent"
+
+- File Permission 
+ansible webservers -m ansible.builtin.file -a "dest=/tmp/hosts mode=777" 
+ansible webservers -m ansible.builtin.file -a "dest=/tmp/hosts mode=600 owner=page group=page"
+
+- Create a Directory and file with the permission
+ansible webservers -m ansible.builtin.file -a "dest=/mnt/rajib mode=755 owner=page group=page state=directory" 
+ansible webservers -m ansible.builtin.file -a "dest=/mnt/rajib/test.txt mode=755 owner=page group=page state=touch"
+
+- managing services 
+ansible web -webservers ansible.builtin.yum -a "name=http state=present"
+ansible web -webservers ansible.builtin.yum -a "name=http-<version> state=present"
+ansible webservers -m ansible.builtin.service -a "name=httpd state=started"
+ansible webservers -m ansible.builtin.service -a "name=httpd state=restarted"
+ansible webservers -m ansible.builtin.service -a "name=httpd state=stopped"
